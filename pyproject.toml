@@ -15,4 +15,4 @@ where = [
 ]
 
 [project.scripts]
-RiboNN-predict = "RiboNN.predict:predict"
+RiboNN-predict = "RiboNN.predict:main"
