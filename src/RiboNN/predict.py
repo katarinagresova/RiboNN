@@ -3,10 +3,12 @@ import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 import torch
+import argparse
+from pathlib import Path
 
-from src.data import RiboNNDataModule
-from src.model import RiboNN
-from src.utils.helpers import extract_config
+from RiboNN.data import RiboNNDataModule
+from RiboNN.model import RiboNN
+from RiboNN.utils.helpers import extract_config
 
 
 def predict_using_models_trained_in_one_fold(
@@ -92,4 +94,53 @@ def predict_using_nested_cross_validation_models(
 
     return all_predictions
 
+def predict(input_file: str, output_file: str, models_dir: str, batch_size: int = 32, num_workers: int = 4, top_k_models: int = 5):
 
+    # Create output directory if it does not exist
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+
+    # Check if directory with models exists
+    model_path = Path(models_dir).resolve()
+    if not model_path.exists():
+        raise ValueError(f"Directory {model_path} does not exist")
+
+    run_df = pd.read_csv(f"{model_path}/runs.csv")
+    predictions = predict_using_nested_cross_validation_models(
+        input_file, 
+        run_df, 
+        top_k_models,
+        batch_size=batch_size,
+        num_workers=num_workers)
+
+    # Calculate the mean tissue/cell-specific TE across the test folds
+    columns_to_aggregate = [col for col in predictions.columns if col.startswith("predicted_")]
+    predicted_TE = predictions.groupby(
+        ["tx_id", "utr5_sequence", "cds_sequence", "utr3_sequence"],
+        as_index=False)[columns_to_aggregate].agg('mean')
+    
+    # Calculate the mean TE across tissue/cell types
+    predicted_TE["mean_predicted_TE"] = predicted_TE[columns_to_aggregate].mean(axis=1)
+
+    # Write predictions to disk
+    predicted_TE.to_csv(output_file, index=False, sep="\t")
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--input_file", type=str, help="Path to the input file (tab delimited)", required=True)
+    parser.add_argument("--output_file", type=str, help="Path to the output file (tab delimited)", required=True)
+    parser.add_argument("--models_dir", type=str, help="Path to the models directory", required=True)
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for prediction")
+    parser.add_argument("--num_workers", type=int, default=4, help="Number of workers for data loading")
+    parser.add_argument("--top_k_models", type=int, default=5, help="Top K models to use for prediction")
+
+    args = parser.parse_args()
+
+    predict(
+        args.input_file,
+        args.output_file,
+        args.models_dir,
+        args.batch_size,
+        args.num_workers,
+        args.top_k_models
+    )

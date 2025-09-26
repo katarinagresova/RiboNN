@@ -1,0 +1,18 @@
+[project]
+name = "RiboNN"
+version = "0.1.0"
+description = "RiboNN: A deep learning model to predict translation efficiency from mRNA sequence"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.setuptools]
+py-modules = []
+
+[tool.setuptools.packages.find]
+where = [
+    "src"
+]
+
+[project.scripts]
+RiboNN-predict = "RiboNN.predict:predict"

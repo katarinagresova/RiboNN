@@ -19,8 +19,8 @@ from pytorch_lightning.callbacks import (
 from pytorch_lightning.loggers import MLFlowLogger
 from sklearn.model_selection import KFold
 
-from src.model import RiboNN
-from src.data import RiboNNDataModule
+from RiboNN.model import RiboNN
+from RiboNN.data import RiboNNDataModule
 
 torch.set_float32_matmul_precision("high")
 

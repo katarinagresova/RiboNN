@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torchmetrics.functional import pearson_corrcoef, r2_score, spearman_corrcoef
-from src.utils.helpers import masked_mse_loss
+from RiboNN.utils.helpers import masked_mse_loss
 
 
 class ConvBlock(nn.Module):
